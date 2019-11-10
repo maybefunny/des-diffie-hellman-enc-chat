@@ -5,7 +5,8 @@ import sys
 from diffiehellman import diffiehellman
 from pydes import des
 
-dh = diffiehellman(7919, 104729)
+dh = diffiehellman(7919, 18446744073709551615)
+d = des()
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
 if len(sys.argv) != 3: 
@@ -27,6 +28,7 @@ while(not flag):
 			if socks == server: 
 				message = socks.recv(2048) 
 				if message[:4] == "/key": 
+					dh.generate_full_key(int(message[5:]))
 					flag = 1
 				else:
 					pass
@@ -36,6 +38,8 @@ while(not flag):
 	except: 
 		continue
 
+print(dh.get_full_key())
+
 while True: 
 	# maintains a list of possible input streams 
 	sockets_list = [sys.stdin, server] 
@@ -43,10 +47,12 @@ while True:
 	for socks in read_sockets: 
 		if socks == server: 
 			message = socks.recv(2048) 
+			message = d.decrypt(dh.get_full_key(), message, True)
 			print("server: "+message)
 		else: 
 			message = sys.stdin.readline() 
-			server.send(message) 
+			message_enc = d.encrypt(dh.get_full_key(), message, True)
+			server.send(message_enc) 
 			sys.stdout.write("You: ") 
 			sys.stdout.write(message) 
 			sys.stdout.flush() 

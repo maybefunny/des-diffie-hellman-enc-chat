@@ -6,7 +6,8 @@ from thread import *
 from diffiehellman import diffiehellman
 from pydes import des
 
-dh = diffiehellman(7919, 104729)
+dh = diffiehellman(7919, 18446744073709551615)
+d = des()
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) 
@@ -33,23 +34,11 @@ def listenThread(conn, addr):
 			try: 
 				message = conn.recv(2048) 
 				if message[:4] == "/key": 
-					print(dh.generate_full_key(int(message[5:])))
+					dh.generate_full_key(int(message[5:]))
 					flag = 1
 				else: 
 					pass
 
-			except: 
-				continue
-
-	while(True):
-			try: 
-				message = conn.recv(2048) 
-				print(message)
-				if message: 
-					print("client: " + message)
-				else: 
-					remove(conn) 
-		
 			except: 
 				continue
 
@@ -78,10 +67,12 @@ while(True):
 	for socks in read_sockets: 
 		if socks == conn: 
 			message = socks.recv(2048) 
+			message = d.decrypt(dh.get_full_key(), message, True)
 			print("client: "+message)
 		else: 
 			message = socks.readline() 
-			sendMessage(message,conn) 
+			message_enc = d.encrypt(dh.get_full_key(), message, True)
+			sendMessage(message_enc,conn) 
 			sys.stdout.write("You: ") 
 			sys.stdout.write(message) 
 			sys.stdout.flush() 

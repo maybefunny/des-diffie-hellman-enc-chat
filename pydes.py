@@ -1,3 +1,5 @@
+from base64 import b64decode, b64encode
+
 #-*- coding: utf8 -*-
 
 #Initial permut matrix for the datas
@@ -116,6 +118,15 @@ def string_to_bit_array(text):#Convert a string into a list of bits
         array.extend([int(x) for x in list(binval)]) #Add the bits to the final list
     return array
 
+def integer_to_bit_array(number):#Convert a string into a list of bits
+    array = [0]*64
+    binvalue = bin(number)[2:]
+    if (len(binvalue)<64):
+        binvalue = (binvalue*64)[:64]
+    for i in range(len(binvalue)):
+        array[i] = int(binvalue[i])
+    return array
+
 def bit_array_to_string(array): #Recreate the string from the bit array
     res = ''.join([chr(int(y,2)) for y in [''.join([str(x) for x in _bytes]) for _bytes in  nsplit(array,8)]])   
     return res
@@ -141,10 +152,10 @@ class des():
         self.keys = list()
         
     def run(self, key, text, action=ENCRYPT, padding=False):
-        if len(key) < 8:
-            raise "Key Should be 8 bytes long"
-        elif len(key) > 8:
-            key = key[:8] #If key size is above 8bytes, cut to be 8bytes long
+        # if len(key) < 8:
+        #     raise "Key Should be 8 bytes long"
+        # elif len(key) > 8:
+        #     key = key[:8] #If key size is above 8bytes, cut to be 8bytes long
         
         self.password = key
         self.text = text
@@ -174,8 +185,6 @@ class des():
                 g = d
                 d = tmp
             result += self.permut(d+g, PI_1) #Do the last permut and append the result to result
-            print(result)
-            exit()
         final_res = bit_array_to_string(result)
         if padding and action==DECRYPT:
             return self.removePadding(final_res) #Remove the padding if decrypt and padding is true
@@ -205,7 +214,7 @@ class des():
     
     def generatekeys(self):#Algorithm that generates all the keys
         self.keys = []
-        key = string_to_bit_array(self.password)
+        key = integer_to_bit_array(self.password)
         key = self.permut(key, CP_1) #Apply the initial permut on the key
         g, d = nsplit(key, 28) #Split it in to (g->LEFT),(d->RIGHT)
         for i in range(16):#Apply the 16 rounds
@@ -225,9 +234,11 @@ class des():
         return data[:-pad_len]
     
     def encrypt(self, key, text, padding=False):
-        return self.run(key, text, ENCRYPT, padding)
+        s = (self.run(key, text, ENCRYPT, padding))
+        return b64encode(s)
     
     def decrypt(self, key, text, padding=False):
+        text = b64decode(text)
         return self.run(key, text, DECRYPT, padding)
     
 if __name__ == '__main__':
